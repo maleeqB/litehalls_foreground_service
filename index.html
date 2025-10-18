@@ -84,15 +84,51 @@
         </div>
         
         <div class="video-wrapper">
-            <video controls preload="metadata">
+            <video id="demo-video" controls preload="metadata">
                 <source src="foreground_video.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
+            <p id="error-message" style="color: #c0392b; margin-top: 10px; text-align: center;"></p>
         </div>
         
         <div class="info">
             <p>This video demonstrates the alarm reminder feature in the LiteHalls app. It shows how a user-scheduled alarm initiates a foreground service to play a sound at the correct time, even when the app is in the background. This functionality is critical for our users and is the reason we require the foreground service permission.</p>
         </div>
     </div>
+
+    <script>
+        const video = document.getElementById('demo-video');
+        const errorMessage = document.getElementById('error-message');
+        let retryCount = 0;
+        const maxRetries = 3;
+        const retryDelay = 2000; // 2 seconds
+
+        video.addEventListener('error', function(e) {
+            // Ignore errors if there's no source or if it's an intentional abort
+            if (!video.currentSrc) return;
+
+            const error = video.error;
+            if (error && (error.code === error.MEDIA_ERR_NETWORK || error.code === error.MEDIA_ERR_DECODE)) {
+                if (retryCount < maxRetries) {
+                    retryCount++;
+                    errorMessage.textContent = `A network error occurred. Retrying in ${retryDelay / 1000} seconds... (Attempt ${retryCount}/${maxRetries})`;
+                    
+                    setTimeout(() => {
+                        video.load(); // Attempt to reload the video
+                    }, retryDelay);
+                } else {
+                    errorMessage.textContent = 'Failed to load video after several attempts. Please check your connection and refresh the page.';
+                }
+            }
+        });
+
+        // When the video successfully starts playing (or can play), clear the error message
+        video.addEventListener('canplay', function() {
+            if (errorMessage.textContent) {
+                errorMessage.textContent = '';
+                retryCount = 0; // Reset counter on success
+            }
+        });
+    </script>
 </body>
 </html>
